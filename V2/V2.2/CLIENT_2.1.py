@@ -152,32 +152,52 @@ print("""\033[31m
 Avvio...
 \033[0m""")
 
-while A == True:
-    indirizzo = input("Inserisci l'ip del server: ")
-    porta = input("Inserisci la porta su cui comunicare: ")
+File_esiste = False
 
-    print("Ip: ", indirizzo, " Porta: ", porta)
-    print("Questi dati sono corretti? (Y/N)")
-    
-    ris = input()
-    if ris.lower() == "y":
-        A = False
-    elif ris.lower() == "n":
-        pass
-    else:
-        print("Non hai inserito nessuna delle due risposte accettate (Y/N)!")
+risposta = "n"
 
-while B == True:
-    risposta = input("Vuoi scegliere un nome? (Y/N): ")
+if os.path.exists("config.txt") and os.path.getsize("config.txt") > 0:
+    File_esiste = True
+    risposta = input("Vuoi usare i dati precedenti? (y/n)")
     if risposta.lower() == "y":
-        print("Inserisci il Nome: ")
-        NomeCli = input()
-        B = False
-    elif risposta.lower() == "n":
-        B = False
-    else:
-        print("Non hai inserito nessuna delle opzioni possibili! (Y/N)")
+        with open("config.txt", "r") as f:
+            righe = f.readlines()
+            
+            righe = [riga.strip() for riga in righe]
 
+            NomeServ = righe[0]
+            porta = righe[1]
+            indirizzo = righe[2]
+
+if risposta.lower() == "n" or File_esiste == False:
+    porta = input("Scegliere porta di rete per la comunicazione: ")
+    stop_anim = False
+
+    A = True
+    B = True
+    while A:
+        risposta1 = input("Vuoi selezionare un ip specifico o rimanere in ascolto di tutti i dispositivi sulla rete? (Y/N): ")
+        if risposta1.lower() == "y":
+            indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
+            A = False
+        elif risposta1.lower() == "n":
+            A = False
+
+    while B:
+        risposta = input("Vuoi scegliere un nome? (Y/N): ")
+        if risposta.lower() == "y":
+            NomeServ = input("Inserisci il Nome: ")
+            B = False
+        elif risposta.lower() == "n":
+            B = False
+            
+    risposta = input("Vuoi memorizzare questi dati e sovrascrivere i precedenti? ")
+    if risposta.lower() == "y":
+        with open("config.txt", "w") as f:
+            f.write(f"{NomeServ}\n")
+            f.write(f"{porta}\n")
+            f.write(f"{indirizzo}\n")
+            
 password = input("Scegli una password per la crittografia (Obbligatorio): ")
 chiave = crea_chiave(char, codice, chiave, password)
 print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
