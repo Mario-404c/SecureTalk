@@ -159,7 +159,7 @@ risposta = "n"
 if os.path.exists("config.txt") and os.path.getsize("config.txt") > 0:
     File_esiste = True
     risposta = input("Vuoi usare i dati precedenti? (y/n)")
-    if risposta.lower() == "y":
+    if risposta.lower() == "y" or "s":
         with open("config.txt", "r") as f:
             righe = f.readlines()
             
@@ -177,22 +177,26 @@ if risposta.lower() == "n" or File_esiste == False:
     B = True
     while A:
         risposta1 = input("Vuoi selezionare un ip specifico o rimanere in ascolto di tutti i dispositivi sulla rete? (Y/N): ")
-        if risposta1.lower() == "y":
+        if risposta1.lower() == "y" or "s":
             indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
             A = False
         elif risposta1.lower() == "n":
             A = False
+        else:
+            print("Non hai selezionato nessuna delle opzioni possibili!")
 
     while B:
         risposta = input("Vuoi scegliere un nome? (Y/N): ")
-        if risposta.lower() == "y":
+        if risposta.lower() == "y" or "s":
             NomeServ = input("Inserisci il Nome: ")
             B = False
         elif risposta.lower() == "n":
             B = False
+        else:
+            print("Non hai selezionato nessuna delle opzioni possibili!")
             
     risposta = input("Vuoi memorizzare questi dati e sovrascrivere i precedenti? ")
-    if risposta.lower() == "y":
+    if risposta.lower() == "y" or "s":
         with open("config.txt", "w") as f:
             f.write(f"{NomeServ}\n")
             f.write(f"{porta}\n")
