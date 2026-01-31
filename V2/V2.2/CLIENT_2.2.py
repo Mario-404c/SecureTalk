@@ -1,21 +1,19 @@
-import time
 import socket
 import threading
 import os, struct
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
-import asyncio
 
-NomeServ = "Server"
+NomeCli = "Client"
+
 CHUNK = 4096
-
-# ----------------- FUNZIONI CRITTOGRAFIA -----------------
-i = 0
+#          -----------------------------INIZIO FUNZIONI CRITTOGRAFIA-----------------------------
+i = 0 
 frasedecrypt = ""
 Frasecrypt = ""
 char = ''
-codice = ''
-chiave = ''
+codice = ""
+chiave = ""
 session = PromptSession()
 
 def crea_chiave(char, codice, chiave, password):
@@ -29,38 +27,45 @@ def crea_chiave(char, codice, chiave, password):
 
 def cripta(mess, chiave, Frasecrypt, i):
     alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
+
     while len(chiave) < len(mess):
         if len(str(chiave)) > len(mess):
             chiave = chiave
         else:
             chiave = chiave + chiave
+
     i = 0
-    Frasecrypt = ""
     for c in mess:
         posizA = alfabeto.index(c)
         posizB = int(chiave[i])
         newposizA = (posizA + posizB) % 97
-        Frasecrypt += alfabeto[newposizA]
-        i += 1
+        Frasecrypt = str(Frasecrypt) + str(alfabeto[newposizA])
+        i = i + 1
     return Frasecrypt
 
 def decripta(Frasecrypt, chiave, i, frasedecrypt):
+    i = 0
     alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
+
     while len(chiave) < len(Frasecrypt):
         if len(str(chiave)) > len(Frasecrypt):
             chiave = chiave
         else:
             chiave = chiave + chiave
-    frasedecrypt = ""
-    for idx, c in enumerate(Frasecrypt):
-        posizA = alfabeto.index(c)
-        posizB = int(chiave[idx])
-        newposizA = (posizA - posizB) % 97
-        frasedecrypt += alfabeto[newposizA]
-    return frasedecrypt
 
-# ----------------- FUNZIONI SOCKET -----------------
+    for c in Frasecrypt:
+        posizA = alfabeto.index(c)
+        posizB = int(chiave[i])
+        newposizA = (posizA - posizB) % 97
+        frasedecrypt = str(frasedecrypt) + str(alfabeto[newposizA])
+        i = i + 1
+    return frasedecrypt
+#           -----------------------------FINE FUNZIONI CRITTOGRAFIA-----------------------------
+
+#         -----------------------------INIZIO FUNZIONI INVIA E RICEVI-----------------------------
+
 def recvall(sock, n):
+    """Legge esattamente n byte dalla socket"""
     data = b''
     while len(data) < n:
         packet = sock.recv(n - len(data))
@@ -70,6 +75,7 @@ def recvall(sock, n):
     return data
 
 def ricevi(conn):
+    global NomeServ
     while True:
         try:
             data = conn.recv(1024)
@@ -77,12 +83,15 @@ def ricevi(conn):
                 print("Connessione chiusa dal server")
                 break
             elif data.decode() == "<<IMG>>":
+                
                 raw_hdr_len = recvall(conn, 4)
                 hdr_len = struct.unpack('!I', raw_hdr_len)[0]
+
                 header_bytes = recvall(conn, hdr_len)
                 header_str = header_bytes.decode()
-                filename, filesize = header_str.split('|')
+                filename, filesize = header_str.split('|') 
                 filesize = int(filesize)
+
                 received = 0
                 with open("ricevuta_" + filename, "wb") as f:
                     while received < filesize:
@@ -92,6 +101,7 @@ def ricevi(conn):
                             break
                         f.write(chunk)
                         received += len(chunk)
+
                 print(f"{NomeServ} ha inviato una foto salvata come ricevuta_{filename}")
             else:
                 Frasecrypt = data.decode()
@@ -101,49 +111,56 @@ def ricevi(conn):
             print("Errore ricezione:", e)
             break
 
-async def invia_async(client):
-    with patch_stdout():  
+def invia(client):
+    with patch_stdout():
         while True:
             try:
-                mess = await session.prompt_async("Tu: ")
+                mess = session.prompt("Tu: ")
             except (EOFError, KeyboardInterrupt):
-                print("\nChiusura invio richiesta dall'utente")
                 break
+
             if mess == "<<IMG>>":
-                FILEPATH = input("Scrivi il nome del file da mandare: ")
+                print("Scrivi il nome del file da mandare: ")
+                FILEPATH = input()
                 client.send("<<IMG>>".encode())
                 filesize = os.path.getsize(FILEPATH)
                 filename = os.path.basename(FILEPATH)
+
                 header = f"{filename}|{filesize}".encode()
-                hdr_len = struct.pack('!I', len(header))
+                hdr_len = struct.pack('!I', len(header))  
+
                 client.sendall(hdr_len)
                 client.sendall(header)
+
                 with open(FILEPATH, "rb") as f:
                     while True:
                         chunk = f.read(CHUNK)
                         if not chunk:
                             break
                         client.sendall(chunk)
+
                 print("Foto inviata!")
             else:
-                messcry = cripta(mess, chiave, Frasecrypt, i)
+                messcry = cripta(mess, chiave, "", 0)
                 client.send(messcry.encode())
 
-# ----------------- SCRIPT PRINCIPALE -----------------
-indirizzo = "0.0.0.0"
+#                    -----------------------------INIZIO SCRIPT-----------------------------
+A = True
+B = True
+
 print("""\033[31m
-Avvio...
+Avvio CLIENT...
 \033[0m""")
 
 File_esiste = False
 
 risposta = "n"
 
-if os.path.exists("config.txt") and os.path.getsize("config.txt") > 0:
+if os.path.exists("config_CLIENT.txt") and os.path.getsize("config_CLIENT.txt") > 0:
     File_esiste = True
     risposta = input("Vuoi usare i dati precedenti? (y/n)")
-    if risposta.lower() == "y" or "s":
-        with open("config.txt", "r") as f:
+    if risposta.lower() == "y" or risposta.lower() == "s":
+        with open("config_CLIENT.txt", "r") as f:
             righe = f.readlines()
             
             righe = [riga.strip() for riga in righe]
@@ -158,19 +175,12 @@ if risposta.lower() == "n" or File_esiste == False:
 
     A = True
     B = True
-    while A:
-        risposta1 = input("Vuoi selezionare un ip specifico? (y/n): ")
-        if risposta1.lower() == "y" or "s":
-            indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
-            A = False
-        elif risposta1.lower() == "n":
-            A = False
-        else:
-            print("Non hai selezionato nessuna delle opzioni possibili!")
+    
+    indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
 
     while B:
         risposta = input("Vuoi scegliere un nome? (Y/N): ")
-        if risposta.lower() == "y" or "s":
+        if risposta.lower() == "y" or risposta.lower() == "s":
             NomeServ = input("Inserisci il Nome: ")
             B = False
         elif risposta.lower() == "n":
@@ -179,30 +189,34 @@ if risposta.lower() == "n" or File_esiste == False:
             print("Non hai selezionato nessuna delle opzioni possibili!")
             
     risposta = input("Vuoi memorizzare questi dati e sovrascrivere i precedenti? ")
-    if risposta.lower() == "y":
-        with open("config.txt", "w") as f:
+    if risposta.lower() == "y" or risposta.lower() == "s":
+        with open("config_CLIENT.txt", "w") as f:
             f.write(f"{NomeServ}\n")
             f.write(f"{porta}\n")
             f.write(f"{indirizzo}\n")
-
+            
 password = input("Scegli una password per la crittografia (Obbligatorio): ")
 chiave = crea_chiave(char, codice, chiave, password)
 print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
-    
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((indirizzo, int(porta)))
-server.listen(1)
 
-print(f"\033[34m Server in ascolto sulla porta {porta}... \033")
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    client.connect((indirizzo, int(porta)))
+    print(f"\033[32m Connessione stabilita con {indirizzo}! \033[0m")
+except ConnectionRefusedError:
+    print("\033[31m Errore! Connessione rifiutata! \033[0m")
+    exit()
+except ConnectionResetError:
+    print("\033[31m Errore! La connessione è stata cambiata! \033[0m")
+    exit()
+except TimeoutError:
+    print("\033[31m Tempo scaduto, connessione chiusa! \033[0m")
+    exit()
 
-conn, indirizzo_client = server.accept()
-print(f"\033[32m Connessione stabilita con {indirizzo_client}! \033[0m")
+client.send(NomeCli.encode())
+data = client.recv(1024)
+NomeServ = data.decode()  
 
-conn.send(NomeServ.encode())
-data = conn.recv(1024)
-NomeCli = data.decode()
+threading.Thread(target=ricevi, args=(client,), daemon=True).start() 
+invia(client) 
 
-threading.Thread(target=ricevi, args=(conn,), daemon=True).start()
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(invia_async(conn))
