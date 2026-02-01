@@ -7,7 +7,6 @@ from prompt_toolkit.patch_stdout import patch_stdout
 NomeCli = "Client"
 
 CHUNK = 4096
-#          -----------------------------INIZIO FUNZIONI CRITTOGRAFIA-----------------------------
 i = 0 
 frasedecrypt = ""
 Frasecrypt = ""
@@ -15,6 +14,8 @@ char = ''
 codice = ""
 chiave = ""
 session = PromptSession()
+
+#          -----------------------------INIZIO FUNZIONI CRITTOGRAFIA-----------------------------
 
 def crea_chiave(char, codice, chiave, password):
     for c in password:
@@ -25,7 +26,9 @@ def crea_chiave(char, codice, chiave, password):
     chiave = int(chiave)
     return str(chiave)
 
-def cripta(mess, chiave, Frasecrypt, i):
+#       --Cesare--
+
+def cripta_cesare(mess, chiave, Frasecrypt, i):
     alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
 
     while len(chiave) < len(mess):
@@ -43,7 +46,7 @@ def cripta(mess, chiave, Frasecrypt, i):
         i = i + 1
     return Frasecrypt
 
-def decripta(Frasecrypt, chiave, i, frasedecrypt):
+def decripta_cesare(Frasecrypt, chiave, i, frasedecrypt):
     i = 0
     alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
 
@@ -60,6 +63,108 @@ def decripta(Frasecrypt, chiave, i, frasedecrypt):
         frasedecrypt = str(frasedecrypt) + str(alfabeto[newposizA])
         i = i + 1
     return frasedecrypt
+#       --Cesare--
+#         --xor--
+
+def cripta_Xor(mess, Key):
+    Lista_bit_parola = []
+    Lista_bit_chiave = []
+    Lista_bit_chiper = []
+
+    Lista_bit_parola.clear()
+    Lista_bit_chiave.clear()
+    Lista_bit_chiper.clear()
+
+    lunghezza_Parola = len(mess) * 2
+    while len(str(Key)) < lunghezza_Parola:
+        Key = Key + Key
+
+    for c in mess:
+        c_byte = c.encode("utf-8")[0]
+        c_bits = format(c_byte, "08b")
+        Lista_bit_parola.append(c_bits)
+
+    i = 0
+    while i < len(str(Key)):
+        coppia = str(Key)[i:i+2]
+        c_bits = format(int(coppia), "08b")
+        Lista_bit_chiave.append(c_bits)
+        i = i + 2
+        
+    for i in range(len(Lista_bit_parola)):
+        parola = Lista_bit_parola[i]
+        chiave = Lista_bit_chiave[i]
+        
+        xor_riga = ""
+        for j in range(len(parola)):
+            xor_bit = str(int(parola[j]) ^ int(chiave[j]))
+            xor_riga += xor_bit
+        
+        Lista_bit_chiper.append(xor_riga)
+
+    Lista_bit_chiper = [riga * 2 for riga in Lista_bit_chiper]
+
+    mess_chiper = ""
+    for r in Lista_bit_chiper:
+        numero = int(r, 2)
+        mess_chiper = mess_chiper + chr(numero)
+    
+    return mess_chiper
+
+def decripta_Xor(chiper, Key):
+    Lista_numeri_unicode = []
+    Lista_bit_numeri_unicode = []
+    Lista_bit_key = []
+    Lista_bit_xor = []
+
+    Lista_numeri_unicode.clear()
+    Lista_bit_numeri_unicode.clear()
+    Lista_bit_key.clear()
+    Lista_bit_xor.clear()
+
+    lunghezza_chiper = len(chiper) * 2
+    while len(str(Key)) < lunghezza_chiper:
+        Key = Key + Key
+
+    for c in chiper:
+        Lista_numeri_unicode.append(ord(c))
+        
+    for c in Lista_numeri_unicode:
+        bits = format(int(c), "016b")
+        
+        Lista_bit_numeri_unicode.append(bits)
+
+    i=0
+    while i <  len(str(Key)):
+        coppia = str(Key)[i:i+2]
+        bit = format(int(coppia), "08b")
+        Lista_bit_key.append(bit)
+        i = i+2
+
+    Lista_bit_key = [riga * 2 for riga in Lista_bit_key]
+
+
+    for i in range(len(Lista_bit_numeri_unicode)):
+        parola = Lista_bit_numeri_unicode[i]
+        chiave = Lista_bit_key[i]
+        
+        xor_riga = ""
+        for j in range(len(parola)):
+            xor_bit = str(int(parola[j]) ^ int(chiave[j]))
+            xor_riga += xor_bit
+        
+        Lista_bit_xor.append(xor_riga)
+
+    mess_decrypt = ""
+    
+    for e in Lista_bit_xor:
+        bit = e[:8]
+        numero = int(bit, 2)
+        mess_decrypt = mess_decrypt + chr(numero)
+    
+    return mess_decrypt
+
+#         --xor--
 #           -----------------------------FINE FUNZIONI CRITTOGRAFIA-----------------------------
 
 #         -----------------------------INIZIO FUNZIONI INVIA E RICEVI-----------------------------
@@ -104,8 +209,11 @@ def ricevi(conn):
 
                 print(f"{NomeServ} ha inviato una foto salvata come ricevuta_{filename}")
             else:
-                Frasecrypt = data.decode()
-                frasedecry = decripta(Frasecrypt, chiave, i, frasedecrypt)
+                chiper = data.decode()
+                if Alg == "cesare":
+                    frasedecry = decripta_cesare(chiper, chiave, i, frasedecrypt)
+                elif Alg == "xor":
+                    frasedecry = decripta_Xor(chiper, chiave)
                 print(NomeServ, ": ", frasedecry)
         except Exception as e:
             print("Errore ricezione:", e)
@@ -141,8 +249,11 @@ def invia(client):
 
                 print("Foto inviata!")
             else:
-                messcry = cripta(mess, chiave, "", 0)
-                client.send(messcry.encode())
+                if Alg == "cesare":
+                    chiper = cripta_cesare(mess, chiave, "", 0)
+                elif Alg == "xor":
+                    chiper = cripta_Xor(mess, chiave)
+                client.send(chiper.encode())
 
 #                    -----------------------------INIZIO SCRIPT-----------------------------
 A = True
@@ -168,32 +279,59 @@ if os.path.exists("config_CLIENT.txt") and os.path.getsize("config_CLIENT.txt") 
             NomeServ = righe[0]
             porta = righe[1]
             indirizzo = righe[2]
+            Alg = righe[3]
 
 if risposta.lower() == "n" or File_esiste == False:
-    porta = input("Scegliere porta di rete per la comunicazione: ")
-    stop_anim = False
-
+    
     A = True
     B = True
+    C = True
     
-    indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
+    while A == True:
+        porta = input("Scegliere porta di rete per la comunicazione: ")
+        indirizzo = input("Inserisci l'ip interno alla rete su cui ascoltare (192.168.1.x): ")
+        risposta = input("Questi dati sono corretti? (y/n)")
+        if risposta.lower() == "y" or risposta.lower() == "s":
+            A = False
+        elif risposta.lower() == "n":
+            A = True
+        else:
+            print("Non hai selezionato nessuna delle opzioni possibili! (y/n)")
 
     while B:
-        risposta = input("Vuoi scegliere un nome? (Y/N): ")
+        risposta = input("Vuoi scegliere un nome? (y/n): ")
         if risposta.lower() == "y" or risposta.lower() == "s":
             NomeServ = input("Inserisci il Nome: ")
             B = False
         elif risposta.lower() == "n":
             B = False
         else:
-            print("Non hai selezionato nessuna delle opzioni possibili!")
+            print("Non hai selezionato nessuna delle opzioni possibili! (y/n)")
+    
+    while C:
+        risposta = input("Scegli l'algoritmo di cifratura |\033[34m Cesare, Xor, Cesare+Xor \033[0m|: ")
+        if risposta.lower() == "cesare":
+            Alg = "cesare"
+            C = False
+        elif risposta.lower() == "xor":
+            Alg = "xor"
+            C = False
+        elif risposta.lower() == "cesare+xor":
+            Alg = "cesare+xor"
+            C = False
+        else:
+            print("Non hai selezionato nessuna delle opzioni possibili! |\033[34m Cesare, Xor, Cesare+Xor \033[0m|")
             
-    risposta = input("Vuoi memorizzare questi dati e sovrascrivere i precedenti? ")
+            
+    risposta = input("Vuoi memorizzare questi dati e sovrascrivere i precedenti? (y/n)")
     if risposta.lower() == "y" or risposta.lower() == "s":
         with open("config_CLIENT.txt", "w") as f:
             f.write(f"{NomeServ}\n")
             f.write(f"{porta}\n")
             f.write(f"{indirizzo}\n")
+            f.write(f"{Alg}\n")
+    else:
+        print("I dati non sono stati sovrascritti. ")
             
 password = input("Scegli una password per la crittografia (Obbligatorio): ")
 chiave = crea_chiave(char, codice, chiave, password)

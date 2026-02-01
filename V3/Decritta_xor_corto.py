@@ -3,7 +3,10 @@ Lista_bit_numeri_unicode = []
 Lista_bit_key = []
 Lista_bit_xor = []
 
-# chiper: 䥉㴽㸾䍃Ḟ᠘ࠈ畵᜗㰼獳剒塘晦繾彟∢㐴䍃
+Lista_numeri_unicode.clear()
+Lista_bit_numeri_unicode.clear()
+Lista_bit_key.clear()
+Lista_bit_xor.clear()
 
 Key = 34235126
 

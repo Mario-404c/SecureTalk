@@ -2,6 +2,10 @@ Lista_bit_parola = []
 Lista_bit_chiave = []
 Lista_bit_chiper = []
 
+Lista_bit_parola.clear()
+Lista_bit_chiave.clear()
+Lista_bit_chiper.clear()
+
 Key = 34235126
 Parola = "Ciao, io sono Mario"
 
