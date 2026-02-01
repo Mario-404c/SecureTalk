@@ -7,17 +7,13 @@ from prompt_toolkit.patch_stdout import patch_stdout
 NomeCli = "Client"
 
 CHUNK = 4096
-i = 0 
-frasedecrypt = ""
-Frasecrypt = ""
-char = ''
-codice = ""
-chiave = ""
+alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
 session = PromptSession()
 
 #          -----------------------------INIZIO FUNZIONI CRITTOGRAFIA-----------------------------
 
-def crea_chiave(char, codice, chiave, password):
+def crea_chiave(password):
+    chiave = ""
     for c in password:
         char = c
         codice = ord(char)
@@ -28,8 +24,7 @@ def crea_chiave(char, codice, chiave, password):
 
 #       --Cesare--
 
-def cripta_cesare(mess, chiave, Frasecrypt, i):
-    alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
+def cripta_cesare(mess, chiave, alfabeto):
 
     while len(chiave) < len(mess):
         if len(str(chiave)) > len(mess):
@@ -38,25 +33,25 @@ def cripta_cesare(mess, chiave, Frasecrypt, i):
             chiave = chiave + chiave
 
     i = 0
+    chiper = ""
     for c in mess:
         posizA = alfabeto.index(c)
         posizB = int(chiave[i])
         newposizA = (posizA + posizB) % 97
-        Frasecrypt = str(Frasecrypt) + str(alfabeto[newposizA])
+        chiper = str(chiper) + str(alfabeto[newposizA])
         i = i + 1
-    return Frasecrypt
+    return chiper
 
-def decripta_cesare(Frasecrypt, chiave, i, frasedecrypt):
+def decripta_cesare(chiper, chiave, alfabeto):
     i = 0
-    alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
 
-    while len(chiave) < len(Frasecrypt):
-        if len(str(chiave)) > len(Frasecrypt):
+    while len(chiave) < len(chiper):
+        if len(str(chiave)) > len(chiper):
             chiave = chiave
         else:
             chiave = chiave + chiave
 
-    for c in Frasecrypt:
+    for c in chiper:
         posizA = alfabeto.index(c)
         posizB = int(chiave[i])
         newposizA = (posizA - posizB) % 97
@@ -211,7 +206,7 @@ def ricevi(conn):
             else:
                 chiper = data.decode()
                 if Alg == "cesare":
-                    frasedecry = decripta_cesare(chiper, chiave, i, frasedecrypt)
+                    frasedecry = decripta_cesare(chiper, chiave, alfabeto)
                 elif Alg == "xor":
                     frasedecry = decripta_Xor(chiper, chiave)
                 print(NomeServ, ": ", frasedecry)
@@ -334,7 +329,7 @@ if risposta.lower() == "n" or File_esiste == False:
         print("I dati non sono stati sovrascritti. ")
             
 password = input("Scegli una password per la crittografia (Obbligatorio): ")
-chiave = crea_chiave(char, codice, chiave, password)
+chiave = crea_chiave(password)
 print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -357,4 +352,3 @@ NomeServ = data.decode()
 
 threading.Thread(target=ricevi, args=(client,), daemon=True).start() 
 invia(client) 
-

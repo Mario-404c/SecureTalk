@@ -9,17 +9,13 @@ import asyncio
 NomeServ = "Server"
 CHUNK = 4096
 
-i = 0
-frasedecrypt = ""
-Frasecrypt = ""
-char = ''
-codice = ''
-chiave = ''
 session = PromptSession()
+alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
 
 # ----------------- FUNZIONI CRITTOGRAFIA -----------------
 
-def crea_chiave(char, codice, chiave, password):
+def crea_chiave(password):
+    chiave = ""
     for c in password:
         char = c
         codice = ord(char)
@@ -30,32 +26,30 @@ def crea_chiave(char, codice, chiave, password):
 
 #       --Cesare--
 
-def cripta_cesare(mess, chiave, Frasecrypt, i):
-    alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
+def cripta_cesare(mess, chiave, alfabeto):
     while len(chiave) < len(mess):
         if len(str(chiave)) > len(mess):
             chiave = chiave
         else:
             chiave = chiave + chiave
     i = 0
-    Frasecrypt = ""
+    chiper = ""
     for c in mess:
         posizA = alfabeto.index(c)
         posizB = int(chiave[i])
         newposizA = (posizA + posizB) % 97
-        Frasecrypt += alfabeto[newposizA]
+        chiper += alfabeto[newposizA]
         i += 1
-    return Frasecrypt
+    return chiper
 
-def decripta_cesare(Frasecrypt, chiave, i, frasedecrypt):
-    alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
-    while len(chiave) < len(Frasecrypt):
-        if len(str(chiave)) > len(Frasecrypt):
+def decripta_cesare(chiper, chiave, alfabeto):
+    while len(chiave) < len(chiper):
+        if len(str(chiave)) > len(chiper):
             chiave = chiave
         else:
             chiave = chiave + chiave
     frasedecrypt = ""
-    for idx, c in enumerate(Frasecrypt):
+    for idx, c in enumerate(chiper):
         posizA = alfabeto.index(c)
         posizB = int(chiave[idx])
         newposizA = (posizA - posizB) % 97
@@ -200,7 +194,7 @@ def ricevi(conn):
             else:
                 chiper = data.decode()
                 if Alg == "cesare":
-                    frasedecry = decripta_cesare(chiper, chiave, i, frasedecrypt)
+                    frasedecry = decripta_cesare(chiper, chiave, alfabeto)
                 elif Alg == "xor":
                     frasedecry = decripta_Xor(chiper, chiave)
                     
@@ -236,7 +230,7 @@ async def invia_async(client):
                 print("Foto inviata!")
             else:
                 if Alg == "cesare":
-                    messcry = cripta_cesare(mess, chiave, Frasecrypt, i)
+                    messcry = cripta_cesare(mess, chiave, alfabeto)
                 elif Alg == "xor":
                     messcry = cripta_Xor(mess, chiave)
                 client.send(messcry.encode())
@@ -317,7 +311,7 @@ if risposta.lower() == "n" or File_esiste == False:
         print("I dati non sono stati sovrascritti. ")
 
 password = input("Scegli una password per la crittografia (Obbligatorio): ")
-chiave = crea_chiave(char, codice, chiave, password)
+chiave = crea_chiave(password)
 print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
     
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
