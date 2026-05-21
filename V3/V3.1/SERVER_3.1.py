@@ -156,6 +156,17 @@ def decripta_Xor(chiper, Key):
     return mess_decrypt
 #         --Xor--
 # ----------------- FUNZIONI SOCKET -----------------
+def presenza_broadcast(porta, nomeServ, stop_event):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    messaggio = f"SERVER|{nomeServ}|{porta}".encode()
+    
+    while not stop_event.is_set():
+        sock.sendto(messaggio, ("<broadcast>", 44929))
+        time.sleep(3)
+    
+    sock.close()
+
 def recvall(sock, n):
     data = b''
     while len(data) < n:
@@ -316,18 +327,59 @@ password = input("Scegli una password per la crittografia (Obbligatorio): ")
 chiave = crea_chiave(password)
 print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
     
+print("Selezionare un opzione: ")
+print("Ascolto: 1")
+print("Ascolto + Broadcast: 2")
+
+scelta = input()
+stop_broadcast = threading.Event() 
+
+if scelta == "2":
+    t_broadcast = threading.Thread(
+        target=presenza_broadcast,
+        args=(porta, NomeServ, stop_broadcast),
+        daemon=True
+    )
+    t_broadcast.start()
+    print("Broadcast avviato, in attesa di un client...")
+    
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(("", int(porta)))
 server.listen(1)
 
-print(f"\033[34m Server in ascolto sulla porta {porta}... \033")
-
-conn, indirizzo_client = server.accept()
-print(f"\033[32m Connessione stabilita con {indirizzo_client}! \033[0m")
+A = True
+while A:
+    print(f"\033[34m Server in ascolto sulla porta {porta}... \033[0m")
+    conn, indirizzo_client = server.accept()
+    data = conn.recv(1024)
+    NomeCli = data.decode()
+    time.sleep(0.1)
+    print(f" Richiesta di connessione da parte di: {indirizzo_client}, con nome: {NomeCli}")
+    D = True
+    while D:
+        print("Accettare? y/n")
+        risposta = input()
+        if(risposta.lower() == "y" or risposta.lower() == "s"):
+            mess = "ACCEPTED"
+            conn.send(mess.encode())
+            print(f"\033[32m Connessione stabilita con {indirizzo_client}! \033[0m")
+            stop_broadcast.set()
+            D = False
+            A = False
+        elif(risposta.lower() == "n"):
+            mess = "REFUSED"
+            conn.send(mess.encode())
+            
+            input(f"\033[31m Connessione rifiutata, attendo input... \033[0m")
+            
+            os.system("cls" if os.name == "nt" else "clear")
+            D = False
+        else:
+            os.system("cls" if os.name == "nt" else "clear")
+            print("Non hai selezionato nessuna delle opzioni possibili!")
+        
 
 conn.send(NomeServ.encode())
-data = conn.recv(1024)
-NomeCli = data.decode()
 
 threading.Thread(target=ricevi, args=(conn,), daemon=True).start()
 

@@ -1,4 +1,5 @@
 import socket
+import time
 import threading
 import os, struct
 from prompt_toolkit import PromptSession
@@ -44,7 +45,8 @@ def cripta_cesare(mess, chiave, alfabeto):
 
 def decripta_cesare(chiper, chiave, alfabeto):
     i = 0
-
+    frasedecrypt = ""
+    
     while len(chiave) < len(chiper):
         if len(str(chiave)) > len(chiper):
             chiave = chiave
@@ -163,6 +165,53 @@ def decripta_Xor(chiper, Key):
 #           -----------------------------FINE FUNZIONI CRITTOGRAFIA-----------------------------
 
 #         -----------------------------INIZIO FUNZIONI INVIA E RICEVI-----------------------------
+def ascolta_broadcast():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("", 44929))
+    server_trovati = []
+    print("In ascolto per server...")
+    E = True
+    while E == True:
+        data, addr = sock.recvfrom(1024)
+        messaggio = data.decode()
+        
+        # il server manda "SERVER|NomeServ|porta"
+        parti = messaggio.split("|")
+        if parti[0] == "SERVER":
+            nomeServ = parti[1]
+            porta = parti[2]
+            ip = addr[0]
+            
+            if not any(s["ip"] == ip for s in server_trovati):
+                    server_trovati.append({"nome": nomeServ, "ip": ip, "porta": porta})
+                    
+        time.sleep(3)
+        if server_trovati:
+            os.system("cls" if os.name == "nt" else "clear")
+            print("Server trovati:")
+            for i, s in enumerate(server_trovati):
+                print(f"  {i+1}. {s['nome']} — {s['ip']}:{s['porta']}")
+            print("r: ricarica | <numero>: carica i dati del server selezionato")
+            risposta = input()
+            if(risposta == "r"):
+             os.system("cls" if os.name == "nt" else "clear")
+            elif(risposta.isdigit() == True):
+                if(int(risposta)>0 and int(risposta) <= len(server_trovati)):
+                    while True:
+                        print(f"Hai selezionato {server_trovati[int(risposta)-1]['nome']} con ip: {server_trovati[int(risposta)-1]['ip']} e porta: {server_trovati[int(risposta)-1]['porta']}")
+                        print("Confemri? y/n")
+                        ris = input()
+                        if(ris.lower() == "y" or ris.lower() == "s"):
+                            E = False
+                            break
+                        elif(ris.lower() == "n"):
+                            input("Attendo input per tornare alla ricerca...")
+                            break
+                        else:
+                            print("Non hai selezionato nessuna delle opzioni possibili")
+    sock.close()
+    return ip, porta
 
 def recvall(sock, n):
     """Legge esattamente n byte dalla socket"""
@@ -245,7 +294,7 @@ def invia(client):
                 print("Foto inviata!")
             else:
                 if Alg == "cesare":
-                    chiper = cripta_cesare(mess, chiave, "", 0)
+                    chiper = cripta_cesare(mess, chiave, alfabeto)
                 elif Alg == "xor":
                     chiper = cripta_Xor(mess, chiave)
                 client.send(chiper.encode())
@@ -308,57 +357,89 @@ def memorizza():
 print("""\033[31m
 Avvio CLIENT...
 \033[0m""")
+A = True
+while A == True:
 
-File_esiste = False
-risposta = "n"
+    while True:
+        print("Vuoi trovare dispositivi sulla rete? y/n")
+        risposta = input()
+        if(risposta.lower() == "y" or risposta.lower() == "s"):
+            Broadcast = True
+            indirizzo, porta = ascolta_broadcast()
+            break
+        elif(risposta.lower() == "n"):
+            Broadcast = False
+            break
+        else:
+            os.system("cls" if os.name == "nt" else "clear")
+            print("Non hai inserito nessuna delle opzioni possibili!")
+        
+        
 
-if os.path.exists("config_CLIENT.txt") and os.path.getsize("config_CLIENT.txt") > 0:
-    File_esiste = True
-    risposta = input("Vuoi usare i dati precedenti? (y/n)")
-    if risposta.lower() == "y" or risposta.lower() == "s":
-        with open("config_CLIENT.txt", "r") as f:
-            righe = f.readlines()
+    File_esiste = False
+    risposta = "n"
+
+    if os.path.exists("config_CLIENT.txt") and os.path.getsize("config_CLIENT.txt") > 0:
+        File_esiste = True
+        risposta = input("Vuoi usare i dati precedenti? (y/n)")
+        if risposta.lower() == "y" or risposta.lower() == "s":
+            with open("config_CLIENT.txt", "r") as f:
+                righe = f.readlines()
+                
+                righe = [riga.strip() for riga in righe]
+
+                NomeCli = righe[0]
+                if(Broadcast == False):
+                    porta = righe[1]
+                    indirizzo = righe[2]
+                Alg = righe[3]
+                
+                print("Nome: ", NomeCli, " porta: ", porta, " Indirizzo: ", indirizzo, "Algoritmo utilizzato: ", Alg)
+
+    if risposta.lower() == "n" or File_esiste == False:
+        
+        if(Broadcast == False):
+            porta = input("Scegliere porta di rete per la comunicazione: ")
             
-            righe = [riga.strip() for riga in righe]
+            indirizzo = seleziona_ip()
+        
+        NomeCli = seleziona_nome()
+        
+        Alg = seleziona_alg()
+                
+        memorizza()
+                
+    password = input("Scegli una password per la crittografia (Obbligatorio): ")
+    chiave = crea_chiave(password)
+    print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
 
-            NomeCli = righe[0]
-            porta = righe[1]
-            indirizzo = righe[2]
-            Alg = righe[3]
-            
-            print("Nome: ", NomeCli, " porta: ", porta, " Indirizzo: ", indirizzo, "Algoritmo utilizzato: ", Alg)
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client.connect((indirizzo, int(porta)))
+        print(f"\033[32m Connessione stabilita con {indirizzo}! \033[0m")
+    except ConnectionRefusedError:
+        print("\033[31m Errore! Connessione rifiutata! \033[0m")
+        exit()
+    except ConnectionResetError:
+        print("\033[31m Errore! La connessione è stata cambiata! \033[0m")
+        exit()
+    except TimeoutError:
+        print("\033[31m Tempo scaduto, connessione chiusa! \033[0m")
+        exit()
 
-if risposta.lower() == "n" or File_esiste == False:
-    
-    porta = input("Scegliere porta di rete per la comunicazione: ")
-    
-    indirizzo = seleziona_ip()
-    
-    NomeCli = seleziona_nome()
-    
-    Alg = seleziona_alg()
-            
-    memorizza()
-            
-password = input("Scegli una password per la crittografia (Obbligatorio): ")
-chiave = crea_chiave(password)
-print("La tua chiave di crittografia è: \033[93;40m", chiave, "\033[0m")
+    client.send(NomeCli.encode())
+    data = client.recv(1024)
+    risposta = data.decode()  
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-try:
-    client.connect((indirizzo, int(porta)))
-    print(f"\033[32m Connessione stabilita con {indirizzo}! \033[0m")
-except ConnectionRefusedError:
-    print("\033[31m Errore! Connessione rifiutata! \033[0m")
-    exit()
-except ConnectionResetError:
-    print("\033[31m Errore! La connessione è stata cambiata! \033[0m")
-    exit()
-except TimeoutError:
-    print("\033[31m Tempo scaduto, connessione chiusa! \033[0m")
-    exit()
+    if(risposta == "ACCEPTED"):
+        print(f"\033[32m Connessione accettata da {indirizzo}! \033[0m")
+        A = False
+    elif(risposta == "REFUSED"):
+        print(f"\033[31m Connessione rifiutata da {indirizzo}! \033[0m")
+        client.close()
+        input(f"Attendo input per continuare la ricerca... ")
+        os.system("cls" if os.name == "nt" else "clear")
 
-client.send(NomeCli.encode())
 data = client.recv(1024)
 NomeServ = data.decode()  
 
