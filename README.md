@@ -4,7 +4,7 @@
 
 
 
-\## Overview
+## Overview
 
 SecureTalk is an encrypted terminal chat application written in Python, based on a client-server model. Currently supported encryption algorithms:
 
@@ -18,7 +18,7 @@ SecureTalk is an encrypted terminal chat application written in Python, based on
 
 
 
-\## Verisions
+## Versions
 
 The project has evolved through multiple versions, and is currently at v3.x, these are the main improvements for each version:
 
@@ -36,7 +36,7 @@ With each commit i'm trying to make the code better and to remove useless variab
 
 
 
-\## Features:
+## Features:
 
 * Encrypted messages (Caesar, XOR)
 * Client-server architecture
