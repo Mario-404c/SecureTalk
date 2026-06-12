@@ -1,4 +1,4 @@
-Mario_Server
+You
 12345
 0.0.0.0
 xor
