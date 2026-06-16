@@ -17,6 +17,9 @@ SecureTalk is an encrypted terminal chat application written in Python, based on
 > ⚠️ **Currently only works on LAN networks.**
 
 
+## Dependencies
+pip install prompt_toolkit
+If you want to communicate from remote, you can use programs like Tailscale or hamachi to create a p2p Vpn
 
 ## Versions
 
