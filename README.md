@@ -8,6 +8,8 @@
 
 SecureTalk is an encrypted terminal chat application written in Python, based on a client-server model. Currently supported encryption algorithms:
 
+\- **pgp**
+
 \- **Caesar**
 
 \- **XOR**
@@ -16,9 +18,12 @@ SecureTalk is an encrypted terminal chat application written in Python, based on
 
 > ⚠️ **Currently only works on LAN networks.**
 
-
 ## Dependencies
-pip install prompt_toolkit
+
+This project requires **GnuPG (gpg)** to be installed on your local system system-wide, as the codebase relies on the underlying system binaries.
+
+pip install prompt_toolkit python-gnupg
+
 If you want to communicate from remote, you can use programs like Tailscale or hamachi to create a p2p Vpn
 
 ## Versions
@@ -32,6 +37,7 @@ The project has evolved through multiple versions, and is currently at v3.x, the
 * **v2.2** - Adding of .txt files to store server and client setup data, in this way the start is much faster.
 * **v3.0** - Xor encryption was added. Images still don't have it lol.
 * **v3.1** - Servers can now advertise themselves in broadcast on the LAN, and can be discovered by clients.
+* **v4.0** - Added pgp encryption, and now you have one single python file, as the project became a real p2p chat.
 
 
 
@@ -41,10 +47,12 @@ With each commit i'm trying to make the code better and to remove useless variab
 
 ## Features:
 
-* Encrypted messages (Caesar, XOR)
-* Client-server architecture
+* Encrypted messages (pgp, Caesar, XOR)
+* p2p architecture
 * Fast setup via saved configuration files
-* Broadcast advertising.
+* gossip discovery method
 * 100% terminal-based
 * 100% Python
+
+
 
