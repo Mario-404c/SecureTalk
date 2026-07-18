@@ -18,9 +18,9 @@ def seleziona_nome():
     B = True
     NomeServ = "Server"
     while B:
-        risposta = input("Vuoi scegliere un nome? (y/n): ")
+        risposta = input("Vuoi scegliere un \033[1m nome \033[0m ? (y/n): ")
         if risposta.lower() == "y" or risposta.lower() == "s":
-            NomeServ = input("Inserisci il Nome: ")
+            NomeServ = input("Inserisci il \033[1m nome \033[0m: ")
             B = False
         elif risposta.lower() == "n":
             B = False
@@ -54,7 +54,10 @@ def memorizza(Nome, porta, Alg, fingerprint):
             f.write(f"{porta}\n")
             f.write(f"{Alg}\n")
             f.write(f"{time.time()}\n")
-            f.write(f"{fingerprint}")
+            if(fingerprint == None):
+                f.write("")
+            else:
+                f.write(f"{fingerprint}")
     else:
         print("I dati non sono stati sovrascritti. ")
         
@@ -64,4 +67,7 @@ def memorizza_no_conferma(Nome, porta, Alg, fingerprint):
         f.write(f"{porta}\n")
         f.write(f"{Alg}\n")
         f.write(f"{time.time()}\n")
-        f.write(f"{fingerprint}")
+        if(fingerprint == None):
+                f.write("")
+        else:
+            f.write(f"{fingerprint}")

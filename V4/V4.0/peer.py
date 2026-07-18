@@ -30,7 +30,7 @@ async def main():
         
     if os.path.exists("config.txt") and os.path.getsize("config.txt") > 0:
         File_esiste = True
-        risposta = input("Vuoi usare i dati precedenti? (y/n)")
+        risposta = input("\033[33m Vuoi usare i dati precedenti? (y/n) \033[0m")
         if risposta.lower() == "y" or risposta.lower() == "s":
             with open("config.txt", "r") as f:
                 righe = f.readlines()
@@ -47,7 +47,7 @@ async def main():
                     fingerprint = None
                     
     if risposta.lower() == "n" or File_esiste == False:
-        porta = input("Scegliere porta di rete per la comunicazione: ")
+        porta = int(input("Scegliere \033[1m porta \033[0m di rete per la comunicazione: "))
 
         Nome = selection.seleziona_nome()
                 
@@ -55,7 +55,7 @@ async def main():
                 
         selection.memorizza(Nome, porta, Alg, fingerprint)
         
-    print("Nome: ", Nome, "ip: ", ip_personale,  " porta: ", porta, "Algoritmo: ", Alg)
+    print("Nome: \033[1m", Nome, "\033[0m  Ip: \033[1m", ip_personale,  "\033[0m Porta: \033[1m", porta, "\033[0m Algoritmo: \033[1m", Alg, "\033[0m")
     
     password = input("Scegli una password per la crittografia (Obbligatorio): ")
     if Alg == "cesare" or Alg == "xor":
@@ -87,7 +87,7 @@ async def main():
         selection.memorizza_no_conferma(Nome, porta, Alg, fingerprint)
     elif Alg == "pgp":
         ris = await asyncio.to_thread(
-            input, f"Hai già una coppia di chiavi, con fingerprint: \n {fingerprint} \n Vuoi utilizzare questa? | y/n "
+            input, f"Hai già una coppia di chiavi, con fingerprint: \033[103m \n {fingerprint} \n \033[0m Vuoi utilizzare questa? | y/n "
         )
         if ris == "n":
             password = await asyncio.to_thread(
@@ -145,11 +145,11 @@ async def main():
         
         if ris == "2":
             ip_destinazione = await asyncio.to_thread(input, "Inserisci ip: ")
-            porta_destinazione = await asyncio.to_thread(input, "inserisci porta: ")
+            porta_destinazione = int(await asyncio.to_thread(input, "inserisci porta: "))
             
             try:
                 reader, writer = await asyncio.wait_for(
-                    asyncio.open_connection(ip_destinazione, int(porta_destinazione)), timeout=3
+                    asyncio.open_connection(ip_destinazione, porta_destinazione), timeout=3
                 )
                 
                 writer.write("CHAT_REQUEST".encode())               # Richiesta chat | Client --> Server
