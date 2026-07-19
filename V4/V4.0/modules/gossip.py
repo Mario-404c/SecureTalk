@@ -93,6 +93,9 @@ async def gestisci_connessione(reader, writer, peers, richieste_in_attesa, chiav
                     gpg_sessione = gnupg.GPG(gnupghome=cartella_temp)               # Keyring temporaneo
                     risultato = gpg_sessione.import_keys(chiave_pubblica_client)    # Import chiave pubblica client
                     fingerprint_client = risultato.fingerprints[0]
+
+                    asyncio.create_task(ricevi(reader, writer, Nome_client, Alg, chiave, alfabeto, gpg, password))
+                    await invia_async(reader, writer, Alg, chiave, gpg_sessione, fingerprint_client, alfabeto, session)
                 
             elif(Alg.lower() !=  Alg_client.lower()):
                 writer.write("ALG_MISMATCH".encode())            # Rifiuto tipo alg | Client <-- Server
@@ -137,7 +140,7 @@ async def gossip(peers, ip_personale):
         await asyncio.sleep(1)
         if(tempo_passato > 5):
             # print("Sono passati 5 secondi o più")
-            with open("..\config.txt", "w") as f:
+            with open("config.txt", "w") as f:
                 f.write(f"{Nome}\n")
                 f.write(f"{porta}\n")
                 f.write(f"{Alg}\n")

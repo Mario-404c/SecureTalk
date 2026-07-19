@@ -12,8 +12,7 @@ from modules import encryption, network, selection, gossip
 
 session = PromptSession()
 alfabeto = "<|b'0#c)d_e$@&61fg!=£hi*j5:klmçùn]2?op^qrs(tuàv,wx+yz7 A+BC.8DèEF;3GHIJaLM[NOòPQéR4>STU-èV*WìX9YZ"
-gpg = gnupg.GPG(gnupghome=os.path.join(os.getcwd(), 'modules\keys'))
-
+gpg = gnupg.GPG(gnupghome=os.path.join(os.getcwd(), 'modules/keys'))
 
 async def main():
     fingerprint = None
